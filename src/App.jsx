@@ -7,7 +7,7 @@ import RegisterPage from "./components/Register";
 import TermsAndConditions from "./components/terms";
 import ProductPage from "./components/ProductPage";
 import Navbar from "./components/navbar";
-import HeroSection from "./components/HeroSection";
+import HeroSection from "./components/heroSection";
 import ServicesSection from "./components/ServicesSection";
 import ProductsSection from "./components/ProductsSection";
 import AboutSection from "./components/AboutSection";
