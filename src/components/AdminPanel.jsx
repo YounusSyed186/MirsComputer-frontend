@@ -166,7 +166,7 @@ const AdminPanel = ({ onBack }) => {
       case "originalPrice":
       case "stock":
       case "minStock":
-        if (isNaN(value) {
+        if (isNaN(value)) {
           error = "Must be a number";
         } else if (parseFloat(value) < 0) {
           error = "Cannot be negative";
@@ -177,7 +177,7 @@ const AdminPanel = ({ onBack }) => {
         }
         break;
       case "discount":
-        if (value && (isNaN(value) || value < 0 || value > 100) {
+        if (value && (isNaN(value) || value < 0 || value > 100)) {
           error = "Must be between 0-100";
         }
         break;
