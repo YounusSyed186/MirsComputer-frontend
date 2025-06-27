@@ -118,717 +118,326 @@ const AdminPanel = ({ onBack }) => {
   };
 
   const ProductForm = ({
-  onClose,
-  categories = ["PC", "Laptop", "Monitor", "Desktop", "Accessories"],
-  brands = ["Dell", "HP", "Lenovo", "ASUS", "Acer"],
-}) => {
-  const [formData, setFormData] = useState({
-    name: "",
-    category: "",
-    brand: "",
-    model: "",
-    price: "",
-    wholesalePrice: "",
-    originalPrice: "",
-    discount: "",
-    rating: "",
-    reviews: "",
-    stock: "",
-    minStock: "",
-    status: "active",
-    description: "",
-    specifications: "",
-    features: "",
-    warrantyTime: "",
-    deliveryTime: "",
-    images: [],
-    isNewProduct: false,
-    isRefurbished: false,
-    isFeatured: false,
-  });
+    onClose,
+    categories = ["PC", "Laptop", "Monitor", "Desktop", "Accessories"],
+    brands = ["Dell", "HP", "Lenovo", "ASUS", "Acer"],
+  }) => {
+    const [formData, setFormData] = useState({
+      name: "",
+      category: "",
+      brand: "",
+      model: "",
+      price: "",
+      wholesalePrice: "",
+      originalPrice: "",
+      discount: "",
+      rating: "",
+      reviews: "",
+      stock: "",
+      minStock: "",
+      status: "active",
+      description: "",
+      specifications: "",
+      features: "",
+      warrantyTime: "",
+      deliveryTime: "",
+      images: [],
+      isNew: false,
+      isRefurbished: false,
+      isFeatured: false,
+    });
 
-  const [imagePreviews, setImagePreviews] = useState([]);
-  const [errors, setErrors] = useState({});
-  const [isSubmitting, setIsSubmitting] = useState(false);
+    const [imagePreviews, setImagePreviews] = useState([]);
 
-  const validateField = (name, value) => {
-    let error = "";
-    
-    switch (name) {
-      case "name":
-      case "category":
-      case "brand":
-      case "model":
-        if (!value.trim()) error = "This field is required";
-        break;
-      case "price":
-      case "wholesalePrice":
-      case "originalPrice":
-      case "stock":
-      case "minStock":
-        if (isNaN(value)) {
-          error = "Must be a number";
-        } else if (parseFloat(value) < 0) {
-          error = "Cannot be negative";
-        } else if (name === "stock" || name === "minStock") {
-          if (!Number.isInteger(Number(value))) {
-            error = "Must be a whole number";
-          }
-        }
-        break;
-      case "discount":
-        if (value && (isNaN(value) || value < 0 || value > 100)) {
-          error = "Must be between 0-100";
-        }
-        break;
-      case "rating":
-        if (value && (isNaN(value) || value < 0 || value > 5)) {
-          error = "Must be between 0-5";
-        }
-        break;
-      case "reviews":
-        if (value && (isNaN(value) || !Number.isInteger(Number(value)) || value < 0)) {
-          error = "Must be a positive whole number";
-        }
-        break;
-      case "warrantyTime":
-      case "deliveryTime":
-        if (value && !/^\d+\s*(day|week|month|year)s?$/i.test(value)) {
-          error = "Format: '1 year', '2 months', etc.";
-        }
-        break;
-      default:
-        break;
-    }
-    
-    return error;
-  };
+    const handleInputChange = (e) => {
+      const { name, value, type, checked } = e.target;
+      setFormData((prev) => ({
+        ...prev,
+        [name]: type === "checkbox" ? checked : value,
+      }));
+    };
 
-  const handleInputChange = (e) => {
-    const { name, value, type, checked } = e.target;
-    
-    // Validate the field
-    const error = validateField(name, type === 'checkbox' ? checked : value);
-    
-    setErrors(prev => ({
-      ...prev,
-      [name]: error
-    }));
-    
-    setFormData(prev => ({
-      ...prev,
-      [name]: type === "checkbox" ? checked : value,
-    }));
-  };
+    const handleImageChange = (e, index) => {
+      const files = e.target.files;
+      if (files.length > 0) {
+        const file = files[0];
+        const previewUrl = URL.createObjectURL(file);
+        const newPreviews = [...imagePreviews];
+        newPreviews[index] = previewUrl;
+        setImagePreviews(newPreviews);
 
-  const handleImageChange = (e, index) => {
-    const files = e.target.files;
-    if (files.length > 0) {
-      const file = files[0];
-      
-      // Validate image file
-      if (!file.type.startsWith('image/')) {
-        setErrors(prev => ({
-          ...prev,
-          images: "Only image files are allowed"
-        }));
-        return;
+        const updatedImages = [...formData.images];
+        updatedImages[index] = file;
+        setFormData((prev) => ({ ...prev, images: updatedImages }));
       }
-      
-      if (file.size > 2 * 1024 * 1024) { // 2MB limit
-        setErrors(prev => ({
-          ...prev,
-          images: "Image must be less than 2MB"
-        }));
-        return;
-      }
-      
-      const previewUrl = URL.createObjectURL(file);
-      const newPreviews = [...imagePreviews];
-      newPreviews[index] = previewUrl;
-      setImagePreviews(newPreviews);
+    };
 
+    const addImageField = () => {
+      setFormData((prev) => ({ ...prev, images: [...prev.images, null] }));
+      setImagePreviews((prev) => [...prev, null]);
+    };
+
+    const removeImage = (index) => {
       const updatedImages = [...formData.images];
-      updatedImages[index] = file;
-      setFormData(prev => ({ ...prev, images: updatedImages }));
-      
-      // Clear image errors if any
-      setErrors(prev => ({
-        ...prev,
-        images: undefined
-      }));
-    }
-  };
+      updatedImages.splice(index, 1);
+      setFormData((prev) => ({ ...prev, images: updatedImages }));
+      const updatedPreviews = [...imagePreviews];
+      updatedPreviews.splice(index, 1);
+      setImagePreviews(updatedPreviews);
+    };
 
-  const addImageField = () => {
-    if (formData.images.length >= 5) {
-      setErrors(prev => ({
-        ...prev,
-        images: "Maximum 5 images allowed"
-      }));
-      return;
-    }
-    
-    setFormData(prev => ({ ...prev, images: [...prev.images, null] }));
-    setImagePreviews(prev => [...prev, null]);
-  };
+    const handleSubmit = async (e) => {
+      e.preventDefault();
+      try {
+        const form = new FormData();
 
-  const removeImage = (index) => {
-    const updatedImages = [...formData.images];
-    updatedImages.splice(index, 1);
-    setFormData(prev => ({ ...prev, images: updatedImages }));
-    
-    const updatedPreviews = [...imagePreviews];
-    updatedPreviews.splice(index, 1);
-    setImagePreviews(updatedPreviews);
-    
-    // Clear image errors if any
-    if (formData.images.length <= 5) {
-      setErrors(prev => ({
-        ...prev,
-        images: undefined
-      }));
-    }
-  };
+        for (const key in formData) {
+          if (key !== "images" && Object.hasOwn(formData, key)) {
+            let value = formData[key];
 
-  const validateForm = () => {
-    const newErrors = {};
-    let isValid = true;
-    
-    // Required fields
-    const requiredFields = ['name', 'category', 'brand', 'model', 'price', 'stock'];
-    requiredFields.forEach(field => {
-      if (!formData[field]) {
-        newErrors[field] = "This field is required";
-        isValid = false;
-      }
-    });
-    
-    // Validate all fields
-    Object.keys(formData).forEach(key => {
-      if (key !== 'images') { // images are handled separately
-        const error = validateField(key, formData[key]);
-        if (error) {
-          newErrors[key] = error;
-          isValid = false;
-        }
-      }
-    });
-    
-    // Validate at least one image
-    if (formData.images.length === 0) {
-      newErrors.images = "At least one image is required";
-      isValid = false;
-    }
-    
-    setErrors(newErrors);
-    return isValid;
-  };
+            if (
+              [
+                "price",
+                "wholesalePrice",
+                "originalPrice",
+                "discount",
+                "rating",
+                "reviews",
+                "stock",
+                "minStock",
+              ].includes(key)
+            ) {
+              value = Number(value);
+            }
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    
-    if (!validateForm()) {
-      return;
-    }
-    
-    try {
-      setIsSubmitting(true);
-      const form = new FormData();
-
-      // Append all fields except images
-      for (const key in formData) {
-        if (key !== "images" && Object.hasOwn(formData, key)) {
-          let value = formData[key];
-
-          // Convert number fields
-          if ([
-            "price",
-            "wholesalePrice",
-            "originalPrice",
-            "discount",
-            "rating",
-            "reviews",
-            "stock",
-            "minStock"
-          ].includes(key)) {
-            value = Number(value);
+            form.append(key, typeof value === "string" ? value.trim() : value);
           }
+        }
 
-          // Convert boolean fields
-          if ([
-            "isNewProduct",
-            "isRefurbished",
-            "isFeatured"
-          ].includes(key)) {
-            value = Boolean(value);
+        formData.images.forEach((file) => {
+          if (file) form.append("images", file);
+        });
+
+        const response = await axios.post(
+          `${import.meta.env.VITE_BASEBACKEND_URL}products/upload`,
+          form,
+          {
+            headers: {
+              "Content-Type": "multipart/form-data",
+            },
           }
+        );
 
-          form.append(key, value);
-        }
+        console.log("✅ Product uploaded:", response.data);
+        alert("Product added successfully!");
+        onClose();
+      } catch (error) {
+        console.error("❌ Upload failed:", error);
+        alert("Failed to upload product. Please try again.");
       }
+    };
 
-      // Append images
-      formData.images.forEach((file) => {
-        if (file) form.append("images", file);
-      });
-
-      const response = await axios.post(
-        `${import.meta.env.VITE_BASEBACKEND_URL}products/upload`,
-        form,
-        {
-          headers: {
-            "Content-Type": "multipart/form-data",
-          },
-        }
-      );
-
-      console.log("✅ Product uploaded:", response.data);
-      alert("Product added successfully!");
-      onClose();
-      fetchProducts(); // Refresh the product list
-    } catch (error) {
-      console.error("❌ Upload failed:", error);
-      let errorMessage = "Failed to upload product. Please try again.";
-      
-      if (error.response) {
-        if (error.response.data.message) {
-          errorMessage = error.response.data.message;
-        } else if (error.response.data.error) {
-          errorMessage = error.response.data.error;
-        }
-      }
-      
-      alert(errorMessage);
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  // Helper component for error display
-  const ErrorMessage = ({ error }) => (
-    error ? <p className="mt-1 text-sm text-red-600">{error}</p> : null
-  );
-
-  return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white dark:bg-gray-800 rounded-lg p-6 w-full max-w-3xl max-h-[90vh] overflow-y-auto">
-        <div className="flex justify-between items-center mb-6">
-          <h3 className="text-xl font-bold text-gray-900 dark:text-white">
-            Add New Product
-          </h3>
-          <button
-            onClick={onClose}
-            className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
-          >
-            <X className="h-6 w-6" />
-          </button>
-        </div>
-
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {/* Required Fields */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Name *
-              </label>
-              <input
-                type="text"
-                name="name"
-                value={formData.name}
-                onChange={handleInputChange}
-                className={`w-full px-3 py-2 border rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white ${
-                  errors.name ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
-                }`}
-              />
-              <ErrorMessage error={errors.name} />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Model *
-              </label>
-              <input
-                type="text"
-                name="model"
-                value={formData.model}
-                onChange={handleInputChange}
-                className={`w-full px-3 py-2 border rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white ${
-                  errors.model ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
-                }`}
-              />
-              <ErrorMessage error={errors.model} />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Category *
-              </label>
-              <select
-                name="category"
-                value={formData.category}
-                onChange={handleInputChange}
-                className={`w-full px-3 py-2 border rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white ${
-                  errors.category ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
-                }`}
-              >
-                <option value="">-- Select Category --</option>
-                {categories.map((cat) => (
-                  <option key={cat} value={cat}>
-                    {cat}
-                  </option>
-                ))}
-              </select>
-              <ErrorMessage error={errors.category} />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Brand *
-              </label>
-              <select
-                name="brand"
-                value={formData.brand}
-                onChange={handleInputChange}
-                className={`w-full px-3 py-2 border rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white ${
-                  errors.brand ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
-                }`}
-              >
-                <option value="">-- Select Brand --</option>
-                {brands.map((brand) => (
-                  <option key={brand} value={brand}>
-                    {brand}
-                  </option>
-                ))}
-              </select>
-              <ErrorMessage error={errors.brand} />
-            </div>
-
-            {/* Price Fields */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Price (₹) *
-              </label>
-              <input
-                type="number"
-                step="0.01"
-                min="0"
-                name="price"
-                value={formData.price}
-                onChange={handleInputChange}
-                className={`w-full px-3 py-2 border rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white ${
-                  errors.price ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
-                }`}
-              />
-              <ErrorMessage error={errors.price} />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Wholesale Price (₹)
-              </label>
-              <input
-                type="number"
-                step="0.01"
-                min="0"
-                name="wholesalePrice"
-                value={formData.wholesalePrice}
-                onChange={handleInputChange}
-                className={`w-full px-3 py-2 border rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white ${
-                  errors.wholesalePrice ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
-                }`}
-              />
-              <ErrorMessage error={errors.wholesalePrice} />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Original Price (₹)
-              </label>
-              <input
-                type="number"
-                step="0.01"
-                min="0"
-                name="originalPrice"
-                value={formData.originalPrice}
-                onChange={handleInputChange}
-                className={`w-full px-3 py-2 border rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white ${
-                  errors.originalPrice ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
-                }`}
-              />
-              <ErrorMessage error={errors.originalPrice} />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Discount (%)
-              </label>
-              <input
-                type="number"
-                min="0"
-                max="100"
-                name="discount"
-                value={formData.discount}
-                onChange={handleInputChange}
-                className={`w-full px-3 py-2 border rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white ${
-                  errors.discount ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
-                }`}
-              />
-              <ErrorMessage error={errors.discount} />
-            </div>
-
-            {/* Stock Fields */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Stock *
-              </label>
-              <input
-                type="number"
-                min="0"
-                step="1"
-                name="stock"
-                value={formData.stock}
-                onChange={handleInputChange}
-                className={`w-full px-3 py-2 border rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white ${
-                  errors.stock ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
-                }`}
-              />
-              <ErrorMessage error={errors.stock} />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Minimum Stock
-              </label>
-              <input
-                type="number"
-                min="0"
-                step="1"
-                name="minStock"
-                value={formData.minStock}
-                onChange={handleInputChange}
-                className={`w-full px-3 py-2 border rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white ${
-                  errors.minStock ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
-                }`}
-              />
-              <ErrorMessage error={errors.minStock} />
-            </div>
-
-            {/* Rating and Reviews */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Rating (0-5)
-              </label>
-              <input
-                type="number"
-                min="0"
-                max="5"
-                step="0.1"
-                name="rating"
-                value={formData.rating}
-                onChange={handleInputChange}
-                className={`w-full px-3 py-2 border rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white ${
-                  errors.rating ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
-                }`}
-              />
-              <ErrorMessage error={errors.rating} />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Reviews Count
-              </label>
-              <input
-                type="number"
-                min="0"
-                step="1"
-                name="reviews"
-                value={formData.reviews}
-                onChange={handleInputChange}
-                className={`w-full px-3 py-2 border rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white ${
-                  errors.reviews ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
-                }`}
-              />
-              <ErrorMessage error={errors.reviews} />
-            </div>
-
-            {/* Warranty and Delivery */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Warranty Period
-              </label>
-              <input
-                type="text"
-                name="warrantyTime"
-                value={formData.warrantyTime}
-                onChange={handleInputChange}
-                placeholder="e.g., 1 year, 6 months"
-                className={`w-full px-3 py-2 border rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white ${
-                  errors.warrantyTime ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
-                }`}
-              />
-              <ErrorMessage error={errors.warrantyTime} />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Delivery Time
-              </label>
-              <input
-                type="text"
-                name="deliveryTime"
-                value={formData.deliveryTime}
-                onChange={handleInputChange}
-                placeholder="e.g., 3 days, 1 week"
-                className={`w-full px-3 py-2 border rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white ${
-                  errors.deliveryTime ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
-                }`}
-              />
-              <ErrorMessage error={errors.deliveryTime} />
-            </div>
-
-            {/* Status */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Status
-              </label>
-              <select
-                name="status"
-                value={formData.status}
-                onChange={handleInputChange}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-              >
-                <option value="active">Active</option>
-                <option value="inactive">Inactive</option>
-              </select>
-            </div>
+    return (
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div className="bg-white dark:bg-gray-800 rounded-lg p-6 w-full max-w-3xl max-h-[90vh] overflow-y-auto">
+          <div className="flex justify-between items-center mb-6">
+            <h3 className="text-xl font-bold text-gray-900 dark:text-white">
+              Add New Product
+            </h3>
+            <button
+              onClick={onClose}
+              className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+            >
+              <X className="h-6 w-6" />
+            </button>
           </div>
 
-          {/* Checkboxes */}
-          <div className="flex gap-4">
-            <label className="flex items-center text-sm text-gray-700 dark:text-gray-300">
-              <input
-                type="checkbox"
-                name="isNewProduct"
-                checked={formData.isNewProduct}
-                onChange={handleInputChange}
-                className="mr-2"
-              />
-              New Product
-            </label>
-            <label className="flex items-center text-sm text-gray-700 dark:text-gray-300">
-              <input
-                type="checkbox"
-                name="isRefurbished"
-                checked={formData.isRefurbished}
-                onChange={handleInputChange}
-                className="mr-2"
-              />
-              Refurbished
-            </label>
-            <label className="flex items-center text-sm text-gray-700 dark:text-gray-300">
-              <input
-                type="checkbox"
-                name="isFeatured"
-                checked={formData.isFeatured}
-                onChange={handleInputChange}
-                className="mr-2"
-              />
-              Featured
-            </label>
-          </div>
-
-          {/* Text Areas */}
-          {["description", "specifications", "features"].map((field) => (
-            <div key={field}>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                {field.charAt(0).toUpperCase() + field.slice(1)}
-              </label>
-              <textarea
-                name={field}
-                value={formData[field]}
-                onChange={handleInputChange}
-                rows={3}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-              />
-            </div>
-          ))}
-
-          {/* Image Upload */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              Product Images *
-            </label>
-            {errors.images && (
-              <p className="text-sm text-red-600 mb-2">{errors.images}</p>
-            )}
-            <div className="space-y-4">
-              {formData.images.map((_, idx) => (
-                <div key={idx} className="flex items-center space-x-4">
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={(e) => handleImageChange(e, idx)}
-                    className="hidden"
-                    id={`image-upload-${idx}`}
-                  />
-                  <label
-                    htmlFor={`image-upload-${idx}`}
-                    className="cursor-pointer px-4 py-2 border rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                  >
-                    {imagePreviews[idx] ? "Change Image" : "Select Image"}
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {[
+                "name",
+                "model",
+                "price",
+                "wholesalePrice",
+                "originalPrice",
+                "discount",
+                "rating",
+                "reviews",
+                "stock",
+                "minStock",
+                "warrantyTime",
+                "deliveryTime",
+              ].map((name) => (
+                <div key={name}>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    {name
+                      .replace(/([A-Z])/g, " $1")
+                      .replace(/^./, (s) => s.toUpperCase())}
                   </label>
-                  {imagePreviews[idx] && (
-                    <>
+                  <input
+                    type="text"
+                    name={name}
+                    value={formData[name]}
+                    onChange={handleInputChange}
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                  />
+                </div>
+              ))}
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Category
+                </label>
+                <select
+                  name="category"
+                  value={formData.category}
+                  onChange={handleInputChange}
+                  className="w-full px-3 py-2 border dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                >
+                  <option value="" disabled>
+                    -- Select Category --
+                  </option>
+                  {categories.map((cat) => (
+                    <option key={cat} value={cat}>
+                      {cat}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Brand
+                </label>
+                <select
+                  name="brand"
+                  value={formData.brand}
+                  onChange={handleInputChange}
+                  className="w-full px-3 py-2 border dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                >
+                  {brands.map((brand) => (
+                    <option key={brand} value={brand}>
+                      {brand}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Status
+                </label>
+                <select
+                  name="status"
+                  value={formData.status}
+                  onChange={handleInputChange}
+                  className="w-full px-3 py-2 border dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                >
+                  <option value="active">Active</option>
+                  <option value="inactive">Inactive</option>
+                </select>
+              </div>
+            </div>
+
+            <div className="flex gap-4">
+              {["isNew", "isRefurbished", "isFeatured"].map((flag) => (
+                <label
+                  key={flag}
+                  className="text-sm text-gray-700 dark:text-gray-300"
+                >
+                  <input
+                    type="checkbox"
+                    name={flag}
+                    checked={formData[flag]}
+                    onChange={handleInputChange}
+                    className="mr-2"
+                  />
+                  {flag.replace("is", "")}
+                </label>
+              ))}
+            </div>
+
+            {["description", "specifications", "features"].map((field) => (
+              <div key={field}>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  {field.charAt(0).toUpperCase() + field.slice(1)}
+                </label>
+                <textarea
+                  name={field}
+                  value={formData[field]}
+                  onChange={handleInputChange}
+                  rows={3}
+                  className="w-full px-3 py-2 border dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                />
+              </div>
+            ))}
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Product Images
+              </label>
+              <div className="space-y-4">
+                {formData.images.map((_, idx) => (
+                  <div key={idx} className="flex items-center space-x-4">
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={(e) => handleImageChange(e, idx)}
+                      className="hidden"
+                      id={`image-upload-${idx}`}
+                    />
+                    <label
+                      htmlFor={`image-upload-${idx}`}
+                      className="cursor-pointer px-4 py-2 border rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                    >
+                      {imagePreviews[idx] ? "Change Image" : "Select Image"}
+                    </label>
+                    {imagePreviews[idx] && (
                       <img
                         src={imagePreviews[idx]}
                         alt={`Preview ${idx}`}
                         className="w-16 h-16 object-cover border rounded"
                       />
-                      <button
-                        type="button"
-                        onClick={() => removeImage(idx)}
-                        className="text-red-500"
-                      >
-                        Remove
-                      </button>
-                    </>
-                  )}
-                </div>
-              ))}
+                    )}
+                    <button
+                      type="button"
+                      onClick={() => removeImage(idx)}
+                      className="text-red-500"
+                    >
+                      Remove
+                    </button>
+                  </div>
+                ))}
+                <button
+                  type="button"
+                  onClick={addImageField}
+                  className="px-4 py-2 bg-gray-200 dark:bg-gray-700 rounded-lg"
+                >
+                  + Add Image
+                </button>
+              </div>
+            </div>
+
+            <div className="flex justify-end gap-4">
               <button
                 type="button"
-                onClick={addImageField}
-                disabled={formData.images.length >= 5}
-                className="px-4 py-2 bg-gray-200 dark:bg-gray-700 rounded-lg disabled:opacity-50"
+                onClick={onClose}
+                className="px-4 py-2 text-gray-600 dark:text-gray-400"
               >
-                + Add Image (Max 5)
+                Cancel
+              </button>
+              <button
+                type="submit"
+                className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+              >
+                Add Product
               </button>
             </div>
-          </div>
-
-          {/* Form Actions */}
-          <div className="flex justify-end gap-4 pt-4">
-            <button
-              type="button"
-              onClick={onClose}
-              className="px-4 py-2 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg"
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              disabled={isSubmitting || Object.keys(errors).some(key => errors[key])}
-              className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {isSubmitting ? "Adding..." : "Add Product"}
-            </button>
-          </div>
-        </form>
+          </form>
+        </div>
       </div>
-    </div>
-  );
-};
+    );
+  };
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors duration-300">
