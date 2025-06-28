@@ -61,7 +61,7 @@ const AdminPanel = ({ onBack }) => {
     fetchProducts();
   }, [searchTerm, selectedCategory]);
 
-  const categories = ["all", "Desktop", "Laptop", "Gaming PC", "Workstation"];
+  const categories = ["all", "Desktop", "Laptop", "PC", "Workstation"];
   const brands = ["Dell", "HP", "Lenovo", "ASUS", "Acer"];
 
   const filteredProducts = products.filter((product) => {
