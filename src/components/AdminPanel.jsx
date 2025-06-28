@@ -98,7 +98,9 @@ const AdminPanel = ({ onBack }) => {
       try {
         setIsLoading(true);
         const response = await axios.delete(
-          `${import.meta.env.VITE_BASEBACKEND_URL}products/deleteProduct/${productId}`
+          `${
+            import.meta.env.VITE_BASEBACKEND_URL
+          }products/deleteProduct/${productId}`
         );
 
         if (response.data.success) {
@@ -142,7 +144,7 @@ const AdminPanel = ({ onBack }) => {
       warrantyTime: "",
       deliveryTime: "",
       images: [],
-      isNew: false,
+      isNewProduct: false,
       isRefurbished: false,
       isFeatured: false,
     });
@@ -181,6 +183,7 @@ const AdminPanel = ({ onBack }) => {
       const updatedImages = [...formData.images];
       updatedImages.splice(index, 1);
       setFormData((prev) => ({ ...prev, images: updatedImages }));
+
       const updatedPreviews = [...imagePreviews];
       updatedPreviews.splice(index, 1);
       setImagePreviews(updatedPreviews);
@@ -188,6 +191,39 @@ const AdminPanel = ({ onBack }) => {
 
     const handleSubmit = async (e) => {
       e.preventDefault();
+
+      const requiredFields = [
+        "name",
+        "category",
+        "brand",
+        "model",
+        "price",
+        "stock",
+      ];
+      for (const field of requiredFields) {
+        if (!formData[field]) {
+          alert(
+            `❗ ${field.charAt(0).toUpperCase() + field.slice(1)} is required.`
+          );
+          return;
+        }
+      }
+
+      if (!["active", "inactive"].includes(formData.status)) {
+        alert("❗ Status must be 'active' or 'inactive'.");
+        return;
+      }
+
+      if (isNaN(Number(formData.price)) || Number(formData.price) < 0) {
+        alert("❗ Price must be a valid positive number.");
+        return;
+      }
+
+      if (isNaN(Number(formData.stock)) || Number(formData.stock) < 0) {
+        alert("❗ Stock must be a valid non-negative number.");
+        return;
+      }
+
       try {
         const form = new FormData();
 
@@ -315,6 +351,9 @@ const AdminPanel = ({ onBack }) => {
                   onChange={handleInputChange}
                   className="w-full px-3 py-2 border dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                 >
+                  <option value="" disabled>
+                    -- Select Brand --
+                  </option>
                   {brands.map((brand) => (
                     <option key={brand} value={brand}>
                       {brand}
@@ -340,19 +379,23 @@ const AdminPanel = ({ onBack }) => {
             </div>
 
             <div className="flex gap-4">
-              {["isNew", "isRefurbished", "isFeatured"].map((flag) => (
+              {[
+                { name: "isNewProduct", label: "New" },
+                { name: "isRefurbished", label: "Refurbished" },
+                { name: "isFeatured", label: "Featured" },
+              ].map(({ name, label }) => (
                 <label
-                  key={flag}
+                  key={name}
                   className="text-sm text-gray-700 dark:text-gray-300"
                 >
                   <input
                     type="checkbox"
-                    name={flag}
-                    checked={formData[flag]}
+                    name={name}
+                    checked={formData[name]}
                     onChange={handleInputChange}
                     className="mr-2"
                   />
-                  {flag.replace("is", "")}
+                  {label}
                 </label>
               ))}
             </div>
@@ -447,10 +490,7 @@ const AdminPanel = ({ onBack }) => {
           isSidebarOpen ? "translate-x-0" : "-translate-x-full"
         }`}
       >
-        <div
-          
-          className="flex items-center justify-between p-4 border-b cursor-pointer border-gray-200 dark:border-gray-700"
-        >
+        <div className="flex items-center justify-between p-4 border-b cursor-pointer border-gray-200 dark:border-gray-700">
           <div onClick={() => onBack()} className="flex items-center space-x-2">
             <Package className="h-8 w-8 text-blue-600" />
             <div>
