@@ -412,7 +412,7 @@ const ProductListing = ({ onBack, openProduct }) => {
                   }}
                 >
                   <ShoppingCart className="h-4 w-4" />
-                  <span>Add to Cart</span>
+                  <span>Buy now call 095500 57658</span>
                 </button>
               </div>
             </div>
